@@ -3,7 +3,7 @@ import './App.css';
 const X_PLAYER = "X"
 const O_PLAYER = "O"
 
-const TicToeBoard = ({board, player, onPlayerMove, disableAll}) => {
+const TicToeBoard = ({board, onPlayerMove, disableAll}) => {
 
   const square = i => {
     let player = board[i];
@@ -11,7 +11,7 @@ const TicToeBoard = ({board, player, onPlayerMove, disableAll}) => {
       <button onClick={() => onPlayerMove(i)} style={{fontSize:'50px', width:'75px', height: '75px'}} disabled={disableAll || player ? true : false} >
         {player ? player : "."}
       </button>
-    )
+    ) 
   }
 
   return(<table>
@@ -29,7 +29,7 @@ const TicToeBoard = ({board, player, onPlayerMove, disableAll}) => {
       <tr>
         <td>{square(6)}</td>
         <td>{square(7)}</td>
-        <td>{square(9)}</td>
+        <td>{square(8)}</td>
       </tr>
     </tbody>
   </table>)
@@ -47,65 +47,72 @@ const STREAKS = [
 ]
 
 const analyseBoard = board => {
+
   for(const streak of STREAKS){
-    
     const [a,b,c] = streak.map(i => board[i])
     if(a !== null && a===b && b===c){
-      
       return {
         winnerAny : a,
-        disableAll: true,
-        gamefinished: true
+        gamefinished: true,
+        playerToMove: null
       }
     }
   }
 
-  return {
-   winnerAny: null,
-   disableAll: false,
-   gamefinished: false
+  const occupiedCellsLength = board.filter(x => x!==null).length
+  
+  if(occupiedCellsLength === board.length){
+    return {
+      winnerAny: null,
+      gamefinished: true,
+      playerToMove: null
+    }
+  }
+
+  const playerToMove = occupiedCellsLength % 2 === 0 ? X_PLAYER : O_PLAYER;
+  return{
+    winnerAny: null,
+    gamefinished: false,
+    playerToMove
   }
 }
 const INITIAL_BOARD = [null, null, null, null, null, null, null, null, null];
 function App() {
 
   const [board, setBoard] = useState(INITIAL_BOARD);
-  const [bool, setBool] = useState(false);
-  const [player, setPlayer] = useState(X_PLAYER);
-  const {winnerAny, disableAll, gamefinished} = analyseBoard(board);
+  const [boardSnapshot, setBoardSnapShot] = useState([INITIAL_BOARD]);
+
+  const {winnerAny,gamefinished, playerToMove} = analyseBoard(board);
 
   const onPlayerMove = i => {
       const nextBoard = board.slice();
-      nextBoard[i] = player;
-      setBoard(nextBoard);
-      if(bool){
-        setPlayer(X_PLAYER);
-      }
-      else{
-        setPlayer(O_PLAYER);
-      }
-      setBool(!bool);
+      nextBoard[i] = playerToMove;
+      setBoard([...nextBoard]);
   }
-  console.log(gamefinished)
+
+  const handleRestartGame = () => {
+    setBoard(INITIAL_BOARD);
+    setBoardSnapShot([INITIAL_BOARD]);
+  }
+  
+  let boardStatus = `it is ${playerToMove} turn`;
   if(gamefinished){
-    console.log(winnerAny);
+    boardStatus = winnerAny ? `Game is won by ${winnerAny}` : "Nobody Won!!";
   }
   return (
     <div className="App">
       <section>
         <h1 className="game--title">Tic Tac Toe</h1>
+        
         <div className="game--container">
-          <TicToeBoard {...{player, board, onPlayerMove, disableAll}} />
+          <TicToeBoard {...{board, onPlayerMove, disableAll:gamefinished}} />
         </div>
         <h2 className="game--status">
           {
-            gamefinished ?
-              <span>Game has finished and won by {winnerAny}</span>
-              :
-              <span>Active </span>
+           boardStatus
           }
         </h2>
-        <button className="game--restart">Restart Game</button>
+        <button className="game--restart" onClick={handleRestartGame}>Restart Game</button>
     </section>
     </div>
   );
